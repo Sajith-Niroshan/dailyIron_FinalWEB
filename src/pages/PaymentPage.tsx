@@ -374,6 +374,8 @@ const PaymentPage: React.FC = () => {
         orderDetails.items,
         orderDetails.is24HourService,
         appliedCoupon?.code,
+        finalPricing.tipAmount,
+        finalPricing.discountAmount,
         finalPricing.finalTotal
       );
       
