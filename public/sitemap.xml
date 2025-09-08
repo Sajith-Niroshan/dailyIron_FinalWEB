@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <!-- Homepage - Highest priority -->
+  <url>
+    <loc>https://dailyironing.ca/</loc>
+    <lastmod>2025-01-16</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+  
+  <!-- Main Navigation Pages -->
+  <url>
+    <loc>https://dailyironing.ca/about-us</loc>
+    <lastmod>2025-01-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
+    <loc>https://dailyironing.ca/faq</loc>
+    <lastmod>2025-01-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <url>
+    <loc>https://dailyironing.ca/get-a-quote</loc>
+    <lastmod>2025-01-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  
+  <url>
+    <loc>https://dailyironing.ca/blog</loc>
+    <lastmod>2025-01-16</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  
+  <!-- Location-specific Service Pages - High priority for local SEO -->
+  <url>
+    <loc>https://dailyironing.ca/surrey-ironing</loc>
+    <lastmod>2025-01-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  
+  <url>
+    <loc>https://dailyironing.ca/south-surrey-ironing</loc>
+    <lastmod>2025-01-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  
+  <url>
+    <loc>https://dailyironing.ca/delta-ironing</loc>
+    <lastmod>2025-01-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  
+  <url>
+    <loc>https://dailyironing.ca/langley-ironing</loc>
+    <lastmod>2025-01-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  
+  <url>
+    <loc>https://dailyironing.ca/white-rock-ironing</loc>
+    <lastmod>2025-01-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  
+  <!-- Google Ads Landing Page -->
+  <url>
+    <loc>https://dailyironing.ca/google-ads-offer</loc>
+    <lastmod>2025-01-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
+  <!-- Blog Posts from blogPosts.ts -->
+  <url>
+    <loc>https://dailyironing.ca/blog/ultimate-guide-garment-care</loc>
+    <lastmod>2024-01-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
+  <url>
+    <loc>https://dailyironing.ca/blog/fabric-types-ironing-guide</loc>
+    <lastmod>2024-01-10</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
+  <url>
+    <loc>https://dailyironing.ca/blog/benefits-professional-ironing</loc>
+    <lastmod>2024-01-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
+  <url>
+    <loc>https://dailyironing.ca/blog/seasonal-wardrobe-care</loc>
+    <lastmod>2023-12-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
+  <url>
+    <loc>https://dailyironing.ca/blog/home-ironing-vs-professional</loc>
+    <lastmod>2023-12-20</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
+  <url>
+    <loc>https://dailyironing.ca/blog/stain-removal-guide</loc>
+    <lastmod>2023-12-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  
+  <!-- Legal Pages -->
+  <url>
+    <loc>https://dailyironing.ca/privacy-policy</loc>
+    <lastmod>2025-01-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <url>
+    <loc>https://dailyironing.ca/terms-and-conditions</loc>
+    <lastmod>2025-01-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.5</priority>
+  </url>
+  
+  <!-- Confirmation Page (lower priority) -->
+  <url>
+    <loc>https://dailyironing.ca/confirmation</loc>
+    <lastmod>2025-01-16</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+</urlset>
+  <!-- Schedule Pickup Page -->
+  <url>
+    <loc>https://dailyironing.ca/schedule-pickup</loc>
+    <lastmod>2025-01-16</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  
+  <!-- Payment Page -->
+  <url>
+    <loc>https://dailyironing.ca/payment</loc>
+    <lastmod>2025-01-16</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.4</priority>
+  </url>
+  
