@@ -325,7 +325,7 @@ const Calculator: React.FC<CalculatorProps> = ({ onSchedulePickup }) => {
             </div>
           </div>
         </div>
-      </div>
+      </section>
     </section>
   );
 };
