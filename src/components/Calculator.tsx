@@ -1,609 +1,325 @@
 import React, { useState, useEffect } from 'react';
-import { Calculator as CalcIcon, Plus, Minus, Clock, Info } from 'lucide-react';
-import { ClothingItemService } from '../services/clothingItemService';
-import { type ClothingItem } from '../lib/supabase';
-
-interface ClothingItemWithQuantity {
-  id: string;
-  name: string;
-  price: number;
-  quantity: number;
-  category: string;
-}
-
-// Define the structure for categorized items
-interface CategorizedItems {
-  men: {
-    'Formal Wear': ClothingItemWithQuantity[];
-    'Casual Wear': ClothingItemWithQuantity[];
-    'Ethnic / Cultural Wear': ClothingItemWithQuantity[];
-    'Outerwear': ClothingItemWithQuantity[];
-    'Seasonal / Layering Items': ClothingItemWithQuantity[];
-  };
-  women: {
-    'Tops & Blouses': ClothingItemWithQuantity[];
-    'Bottoms': ClothingItemWithQuantity[];
-    'Dresses': ClothingItemWithQuantity[];
-    'Ethnic / Cultural Wear': ClothingItemWithQuantity[];
-    'Outerwear': ClothingItemWithQuantity[];
-    'Other Items': ClothingItemWithQuantity[];
-  };
-  household: {
-    'Bedding': ClothingItemWithQuantity[];
-    'Table Linens': ClothingItemWithQuantity[];
-    'Window Treatments': ClothingItemWithQuantity[];
-    'Bath Linens': ClothingItemWithQuantity[];
-    'Miscellaneous': ClothingItemWithQuantity[];
-  };
-}
+import { Plus, Minus, Zap, Calculator as CalcIcon, Truck, CheckCircle } from 'lucide-react';
 
 interface CalculatorProps {
   onSchedulePickup: (orderDetails: any) => void;
 }
 
+interface ClothingItem {
+  id: string;
+  name: string;
+  price: number;
+  category: string;
+}
+
+interface OrderItem {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+}
+
 const Calculator: React.FC<CalculatorProps> = ({ onSchedulePickup }) => {
-  const [activeTab, setActiveTab] = useState<'men' | 'women' | 'household'>('men');
+  const [selectedTab, setSelectedTab] = useState('mens');
+  const [selectedItems, setSelectedItems] = useState<OrderItem[]>([]);
   const [is24HourService, setIs24HourService] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  
-  // Use a single state for all categorized items
-  const [categorizedItems, setCategorizedItems] = useState<CategorizedItems>({
-    men: {
-      'Formal Wear': [],
-      'Casual Wear': [],
-      'Ethnic / Cultural Wear': [],
-      'Outerwear': [],
-      'Seasonal / Layering Items': [],
-    },
-    women: {
-      'Tops & Blouses': [],
-      'Bottoms': [],
-      'Dresses': [],
-      'Ethnic / Cultural Wear': [],
-      'Outerwear': [],
-      'Other Items': [],
-    },
-    household: {
-      'Bedding': [],
-      'Table Linens': [],
-      'Window Treatments': [],
-      'Bath Linens': [],
-      'Miscellaneous': [],
-    },
-  });
 
-  // Helper to map database categories to display names
-  const categoryMap: { [key: string]: string } = {
-    'men_formal_wear': 'Formal Wear',
-    'men_casual_wear': 'Casual Wear',
-    'men_ethnic_cultural_wear': 'Ethnic / Cultural Wear',
-    'men_outerwear': 'Outerwear',
-    'men_seasonal_layering': 'Seasonal / Layering Items',
-    'women_tops_blouses': 'Tops & Blouses',
-    'women_bottoms': 'Bottoms',
-    'women_dresses': 'Dresses',
-    'women_ethnic_cultural_wear': 'Ethnic / Cultural Wear',
-    'women_outerwear': 'Outerwear',
-    'women_other_items': 'Other Items',
-    'household_bedding': 'Bedding',
-    'household_table_linens': 'Table Linens',
-    'household_window_treatments': 'Window Treatments',
-    'household_bath_linens': 'Bath Linens',
-    'household_miscellaneous': 'Miscellaneous',
+  // Clothing items data
+  const clothingItems: Record<string, ClothingItem[]> = {
+    mens: [
+      { id: 'mens-shirt', name: 'Dress Shirt', price: 4.50, category: 'mens' },
+      { id: 'mens-pants', name: 'Dress Pants', price: 6.00, category: 'mens' },
+      { id: 'mens-suit-jacket', name: 'Suit Jacket', price: 8.50, category: 'mens' },
+      { id: 'mens-tie', name: 'Tie', price: 3.00, category: 'mens' },
+      { id: 'mens-polo', name: 'Polo Shirt', price: 4.00, category: 'mens' },
+      { id: 'mens-casual-shirt', name: 'Casual Shirt', price: 4.00, category: 'mens' }
+    ],
+    womens: [
+      { id: 'womens-blouse', name: 'Blouse', price: 5.00, category: 'womens' },
+      { id: 'womens-dress', name: 'Dress', price: 8.00, category: 'womens' },
+      { id: 'womens-skirt', name: 'Skirt', price: 5.50, category: 'womens' },
+      { id: 'womens-pants', name: 'Pants', price: 6.00, category: 'womens' },
+      { id: 'womens-jacket', name: 'Jacket', price: 8.50, category: 'womens' },
+      { id: 'womens-shirt', name: 'Shirt', price: 4.50, category: 'womens' }
+    ],
+    household: [
+      { id: 'pillowcase', name: 'Pillowcase', price: 3.00, category: 'household' },
+      { id: 'tablecloth', name: 'Tablecloth', price: 6.50, category: 'household' },
+      { id: 'napkin', name: 'Napkin', price: 2.50, category: 'household' },
+      { id: 'tea-towel', name: 'Tea Towel', price: 3.00, category: 'household' },
+      { id: 'placemat', name: 'Placemat', price: 2.50, category: 'household' }
+    ]
   };
 
-  // Fetch clothing items from database
-  useEffect(() => {
-    const fetchClothingItems = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        if (!import.meta.env.VITE_SUPABASE_URL || 
-            import.meta.env.VITE_SUPABASE_URL === 'your_supabase_project_url') {
-          console.warn('Supabase not configured, using fallback items');
-          throw new Error('Database not configured');
-        }
-        
-        const items = await ClothingItemService.getClothingItems({
-          isActive: true
-        });
+  const tabs = [
+    { id: 'mens', label: "Men's Clothing", icon: '👔' },
+    { id: 'womens', label: "Women's Clothing", icon: '👗' },
+    { id: 'household', label: 'Household Items', icon: '🏠' }
+  ];
 
-        const newCategorizedItems: CategorizedItems = {
-          men: {
-            'Formal Wear': [],
-            'Casual Wear': [],
-            'Ethnic / Cultural Wear': [],
-            'Outerwear': [],
-            'Seasonal / Layering Items': [],
-          },
-          women: {
-            'Tops & Blouses': [],
-            'Bottoms': [],
-            'Dresses': [],
-            'Ethnic / Cultural Wear': [],
-            'Outerwear': [],
-            'Other Items': [],
-          },
-          household: {
-            'Bedding': [],
-            'Table Linens': [],
-            'Window Treatments': [],
-            'Bath Linens': [],
-            'Miscellaneous': [],
-          },
-        };
-
-        items.forEach(item => {
-          // Helper function to safely convert price to number
-          const safePrice = (price: any): number => {
-            const converted = Number(price);
-            return isNaN(converted) ? 0 : converted;
-          };
-
-          const displayCategory = categoryMap[item.category];
-          if (displayCategory) {
-            if (item.category.startsWith('men_')) {
-              newCategorizedItems.men[displayCategory as keyof typeof newCategorizedItems.men]?.push({
-                id: item.id,
-                name: item.name,
-                price: safePrice(item.base_price),
-                quantity: 0,
-                category: item.category
-              });
-            } else if (item.category.startsWith('women_')) {
-              newCategorizedItems.women[displayCategory as keyof typeof newCategorizedItems.women]?.push({
-                id: item.id,
-                name: item.name,
-                price: safePrice(item.base_price),
-                quantity: 0,
-                category: item.category
-              });
-            } else if (item.category.startsWith('household_')) {
-              newCategorizedItems.household[displayCategory as keyof typeof newCategorizedItems.household]?.push({
-                id: item.id,
-                name: item.name,
-                price: safePrice(item.base_price),
-                quantity: 0,
-                category: item.category
-              });
-            }
-          }
-        });
-
-        setCategorizedItems(newCategorizedItems);
-
-      } catch (err) {
-        console.warn('Using fallback pricing (database not available):', err);
-        setError('Using default pricing - connect to Supabase for live pricing');
-        
-        // Fallback to hardcoded items if database fetch fails
-        setCategorizedItems({
-          men: {
-            'Formal Wear': [
-              { id: 'm-f-1', name: 'Dress shirts (short or long sleeve)', price: 3.50, quantity: 0, category: 'men_formal_wear' },
-              { id: 'm-f-2', name: 'Dress pants / trousers', price: 4.00, quantity: 0, category: 'men_formal_wear' },
-              { id: 'm-f-3', name: 'Blazers / suit jackets', price: 8.00, quantity: 0, category: 'men_formal_wear' },
-              { id: 'm-f-4', name: 'Ties', price: 2.00, quantity: 0, category: 'men_formal_wear' },
-              { id: 'm-f-5', name: 'Waistcoats (vests)', price: 6.00, quantity: 0, category: 'men_formal_wear' },
-            ],
-            'Casual Wear': [
-              { id: 'm-c-1', name: 'T-shirts', price: 2.50, quantity: 0, category: 'men_casual_wear' },
-              { id: 'm-c-2', name: 'Casual button-up shirts', price: 3.00, quantity: 0, category: 'men_casual_wear' },
-              { id: 'm-c-3', name: 'Jeans', price: 4.00, quantity: 0, category: 'men_casual_wear' },
-              { id: 'm-c-4', name: 'Chinos / khakis', price: 3.50, quantity: 0, category: 'men_casual_wear' },
-              { id: 'm-c-5', name: 'Casual shorts', price: 3.00, quantity: 0, category: 'men_casual_wear' },
-            ],
-            'Ethnic / Cultural Wear': [
-              { id: 'm-e-1', name: 'Kurta Tops', price: 7.00, quantity: 0, category: 'men_ethnic_cultural_wear' },
-              { id: 'm-e-2', name: 'Kurta pants', price: 5.00, quantity: 0, category: 'men_ethnic_cultural_wear' },
-            ],
-            'Outerwear': [
-              { id: 'm-o-1', name: 'Sweaters', price: 5.00, quantity: 0, category: 'men_outerwear' },
-              { id: 'm-o-2', name: 'Hoodies', price: 5.00, quantity: 0, category: 'men_outerwear' },
-            ],
-            'Seasonal / Layering Items': [
-              { id: 'm-s-1', name: 'Flannel shirts', price: 3.50, quantity: 0, category: 'men_seasonal_layering' },
-            ],
-          },
-          women: {
-            'Tops & Blouses': [
-              { id: 'w-tb-1', name: 'T-shirts', price: 2.50, quantity: 0, category: 'women_tops_blouses' },
-              { id: 'w-tb-2', name: 'Blouses', price: 4.00, quantity: 0, category: 'women_tops_blouses' },
-              { id: 'w-tb-3', name: 'Dress shirts', price: 3.50, quantity: 0, category: 'women_tops_blouses' },
-              { id: 'w-tb-4', name: 'Long-sleeve tops', price: 3.50, quantity: 0, category: 'women_tops_blouses' },
-              { id: 'w-tb-5', name: 'Button-up shirts', price: 3.50, quantity: 0, category: 'women_tops_blouses' },
-            ],
-            'Bottoms': [
-              { id: 'w-b-1', name: 'Pants / trousers', price: 4.00, quantity: 0, category: 'women_bottoms' },
-              { id: 'w-b-2', name: 'Jeans', price: 4.00, quantity: 0, category: 'women_bottoms' },
-              { id: 'w-b-3', name: 'Skirts (mini, midi, maxi)', price: 4.50, quantity: 0, category: 'women_bottoms' },
-              { id: 'w-b-4', name: 'Shorts', price: 3.00, quantity: 0, category: 'women_bottoms' },
-            ],
-            'Dresses': [
-              { id: 'w-d-1', name: 'Casual dresses', price: 7.00, quantity: 0, category: 'women_dresses' },
-              { id: 'w-d-2', name: 'Formal dresses', price: 10.00, quantity: 0, category: 'women_dresses' },
-              { id: 'w-d-3', name: 'Office/work dresses', price: 8.00, quantity: 0, category: 'women_dresses' },
-            ],
-            'Ethnic / Cultural Wear': [
-              { id: 'w-e-1', name: 'Sarees (2 Piece - blouse and saree piece)', price: 15.00, quantity: 0, category: 'women_ethnic_cultural_wear' },
-              { id: 'w-e-2', name: 'Salwar kameez (top)', price: 7.00, quantity: 0, category: 'women_ethnic_cultural_wear' },
-              { id: 'w-e-3', name: 'Salwar kameez (bottom)', price: 5.00, quantity: 0, category: 'women_ethnic_cultural_wear' },
-              { id: 'w-e-4', name: 'Salwar kameez (dupatta)', price: 3.00, quantity: 0, category: 'women_ethnic_cultural_wear' },
-              { id: 'w-e-5', name: 'Kurta Tops', price: 7.00, quantity: 0, category: 'women_ethnic_cultural_wear' },
-              { id: 'w-e-6', name: 'Kurta pants', price: 5.00, quantity: 0, category: 'women_ethnic_cultural_wear' },
-              { id: 'w-e-7', name: 'Abayas', price: 8.00, quantity: 0, category: 'women_ethnic_cultural_wear' },
-              { id: 'w-e-8', name: 'Sarongs/Lungi', price: 4.00, quantity: 0, category: 'women_ethnic_cultural_wear' },
-              { id: 'w-e-9', name: 'Hijabs or shawls', price: 3.00, quantity: 0, category: 'women_ethnic_cultural_wear' },
-            ],
-            'Outerwear': [
-              { id: 'w-o-1', name: 'Cardigans', price: 5.00, quantity: 0, category: 'women_outerwear' },
-              { id: 'w-o-2', name: 'Blazers', price: 8.00, quantity: 0, category: 'women_outerwear' },
-            ],
-            'Other Items': [
-              { id: 'w-oi-1', name: 'Nightgowns / sleepwear', price: 4.00, quantity: 0, category: 'women_other_items' },
-              { id: 'w-oi-2', name: 'Aprons (clothing)', price: 3.00, quantity: 0, category: 'women_other_items' },
-            ],
-          },
-          household: {
-            'Bedding': [
-              { id: 'h-b-1', name: 'Single Bedsheet', price: 8.00, quantity: 0, category: 'household_bedding' },
-              { id: 'h-b-2', name: 'Double Bedsheet', price: 10.00, quantity: 0, category: 'household_bedding' },
-              { id: 'h-b-3', name: 'Queen Bedsheet', price: 12.00, quantity: 0, category: 'household_bedding' },
-              { id: 'h-b-4', name: 'King Bedsheet', price: 15.00, quantity: 0, category: 'household_bedding' },
-              { id: 'h-b-5', name: 'Pillowcase', price: 3.00, quantity: 0, category: 'household_bedding' },
-            ],
-            'Table Linens': [
-              { id: 'h-tl-1', name: 'Small Tablecloth', price: 8.00, quantity: 0, category: 'household_table_linens' },
-              { id: 'h-tl-2', name: 'Medium Tablecloth', price: 12.00, quantity: 0, category: 'household_table_linens' },
-              { id: 'h-tl-3', name: 'Large Tablecloth', price: 16.00, quantity: 0, category: 'household_table_linens' },
-            ],
-            'Window Treatments': [
-              { id: 'h-wt-1', name: 'Small Curtain Panel', price: 10.00, quantity: 0, category: 'household_window_treatments' },
-              { id: 'h-wt-2', name: 'Medium Curtain Panel', price: 15.00, quantity: 0, category: 'household_window_treatments' },
-              { id: 'h-wt-3', name: 'Large Curtain Panel', price: 20.00, quantity: 0, category: 'household_window_treatments' },
-            ],
-            'Bath Linens': [
-              { id: 'h-bl-1', name: 'Bath Towel', price: 5.00, quantity: 0, category: 'household_bath_linens' },
-              { id: 'h-bl-2', name: 'Hand Towel', price: 3.00, quantity: 0, category: 'household_bath_linens' },
-            ],
-            'Miscellaneous': [
-              { id: 'h-m-1', name: 'Throw Blanket', price: 12.00, quantity: 0, category: 'household_miscellaneous' },
-              { id: 'h-m-2', name: 'Comforter/Duvet', price: 25.00, quantity: 0, category: 'household_miscellaneous' },
-            ],
-          },
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchClothingItems();
-  }, []);
-
-  const updateQuantity = (mainCategory: 'men' | 'women' | 'household', subCategory: string, index: number, delta: number) => {
-    setCategorizedItems(prevItems => {
-      const newItems = { ...prevItems };
-      const currentSubCategoryItems = newItems[mainCategory][subCategory as keyof typeof newItems[typeof mainCategory]];
-      
-      if (currentSubCategoryItems) {
-        const updatedSubCategoryItems = [...currentSubCategoryItems];
-        // Create a new item object with updated quantity to ensure immutability
-        updatedSubCategoryItems[index] = {
-          ...updatedSubCategoryItems[index],
-          quantity: Math.max(0, updatedSubCategoryItems[index].quantity + delta)
-        };
-        newItems[mainCategory] = {
-          ...newItems[mainCategory],
-          [subCategory]: updatedSubCategoryItems
-        };
-      }
-      return newItems;
-    });
+  // Add item to order
+  const addItem = (item: ClothingItem) => {
+    const existingItem = selectedItems.find(selected => selected.id === item.id);
+    
+    if (existingItem) {
+      setSelectedItems(prev => 
+        prev.map(selected => 
+          selected.id === item.id 
+            ? { ...selected, quantity: selected.quantity + 1 }
+            : selected
+        )
+      );
+    } else {
+      setSelectedItems(prev => [...prev, { ...item, quantity: 1 }]);
+    }
   };
 
+  // Remove item from order
+  const removeItem = (itemId: string) => {
+    const existingItem = selectedItems.find(item => item.id === itemId);
+    
+    if (existingItem && existingItem.quantity > 1) {
+      setSelectedItems(prev => 
+        prev.map(item => 
+          item.id === itemId 
+            ? { ...item, quantity: item.quantity - 1 }
+            : item
+        )
+      );
+    } else {
+      setSelectedItems(prev => prev.filter(item => item.id !== itemId));
+    }
+  };
+
+  // Calculate pricing
   const calculatePricing = () => {
-    let baseTotal = 0;
-    let totalItems = 0;
-    
-    // Iterate through all categorized items to calculate total
-    Object.values(categorizedItems).forEach(mainCat => {
-      Object.values(mainCat).forEach(subCatItems => {
-        subCatItems.forEach(item => {
-          if (item.quantity > 0) {
-            const itemPrice = is24HourService ? item.price + 1.00 : item.price;
-            baseTotal += itemPrice * item.quantity;
-            totalItems += item.quantity;
-          }
-        });
-      });
-    });
+    const baseTotal = selectedItems.reduce((total, item) => {
+      const itemPrice = is24HourService ? item.price + 1.00 : item.price;
+      return total + (itemPrice * item.quantity);
+    }, 0);
 
-    const deliveryFee = (baseTotal > 0 && baseTotal < 35) ? 5.00 : 0;
+    const totalItems = selectedItems.reduce((total, item) => total + item.quantity, 0);
+    const deliveryFee = baseTotal >= 35 ? 0 : 5.00;
     const finalTotal = baseTotal + deliveryFee;
-    
+
     return {
       baseTotal,
       deliveryFee,
       finalTotal,
-      totalItems,
-      surchargePerItem: is24HourService ? 1.00 : 0,
-      qualifiesForFreeDelivery: baseTotal >= 35
+      totalItems
     };
   };
 
   const pricing = calculatePricing();
-  const hasItems = pricing.totalItems > 0;
 
   const handleSchedulePickup = () => {
-    const selectedItems: any[] = [];
-    Object.values(categorizedItems).forEach(mainCat => {
-      Object.values(mainCat).forEach(subCatItems => {
-        subCatItems.forEach(item => {
-          if (item.quantity > 0) {
-            selectedItems.push(item);
-          }
-        });
-      });
-    });
-
     const orderDetails = {
-      items: selectedItems,
+      items: selectedItems.map(item => ({
+        ...item,
+        price: is24HourService ? item.price + 1.00 : item.price
+      })),
       is24HourService,
-      pricing,
-      timestamp: new Date().toISOString()
+      pricing
     };
-
+    
     onSchedulePickup(orderDetails);
   };
 
-  // Show loading state
-  if (loading) {
-    return (
-      <section className="py-16" style={{ backgroundColor: '#FFF8F0' }}>
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto" id="calculator-section">
-            <div className="text-center mb-12">
-              <div className="flex items-center justify-center space-x-3 mb-4">
-                <CalcIcon className="w-8 h-8" style={{ color: '#E87461' }} />
-                <h2 className="text-4xl font-bold" style={{ color: '#2C3E50' }}>Get Your Quote</h2>
-              </div>
-              <p className="text-xl" style={{ color: '#2C3E50' }}>
-                Loading clothing items...
-              </p>
-            </div>
-            <div className="bg-white rounded-2xl shadow-xl p-8">
-              <div className="animate-pulse space-y-4">
-                <div className="h-20 bg-gray-200 rounded"></div>
-                <div className="grid md:grid-cols-2 gap-4">
-                  {[...Array(6)].map((_, i) => (
-                    <div key={i} className="h-24 bg-gray-200 rounded"></div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-    );
-  }
-
   return (
-    <section className="py-16" style={{ backgroundColor: '#FFF8F0' }}>
+    <section id="calculator-section" className="py-16 bg-white">
       <div className="container mx-auto px-4">
-        <div className="max-w-4xl mx-auto" id="calculator-section">
+        <div className="max-w-6xl mx-auto">
+          {/* Header */}
           <div className="text-center mb-12">
-            <div className="flex items-center justify-center space-x-3 mb-4">
-              <CalcIcon className="w-8 h-8" style={{ color: '#E87461' }} />
-              <h2 className="text-4xl font-bold" style={{ color: '#2C3E50' }}>Get Your Quote</h2>
+            <div className="w-16 h-16 rounded-full mx-auto mb-6 flex items-center justify-center bg-gradient-to-r from-orange-500 to-red-500">
+              <CalcIcon className="w-8 h-8 text-white" />
             </div>
-            <p className="text-xl" style={{ color: '#2C3E50' }}>
-              Not sure what it'll cost?<br />
-              Use our quote tool — no sign-up needed.
+            <h2 className="text-4xl md:text-5xl font-bold mb-4" style={{ color: '#2C3E50' }}>
+              Get Your <span style={{ color: '#E87461' }}>FREE Quote</span>
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Select your items and get an instant price quote. No hidden fees, no surprises.
             </p>
           </div>
 
-          {error && (
-            <div className="mb-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <p className="text-yellow-800 text-center">
-                {error}
-              </p>
-            </div>
-          )}
-
-          <div className="bg-white rounded-2xl shadow-xl p-8">
-            {/* Service Options */}
-            <div className="mb-8 p-6 rounded-lg" style={{ backgroundColor: '#FFF8F0' }}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <Clock className="w-6 h-6" style={{ color: '#E87461' }} />
-                  <div>
-                    <h3 className="text-lg font-semibold" style={{ color: '#2C3E50' }}>
-                      24-Hour Express Service
-                    </h3>
-                    <p className="text-sm" style={{ color: '#2C3E50' }}>
-                      Get your items back within 24 hours (+$1.00 per item)
-                    </p>
+          <div className="grid lg:grid-cols-3 gap-8">
+            {/* Item Selection */}
+            <div className="lg:col-span-2">
+              <div className="bg-white rounded-2xl shadow-xl p-8">
+                {/* Express Service Toggle */}
+                <div className="mb-8 p-6 rounded-2xl border-2" style={{ borderColor: '#E87461', backgroundColor: '#FFF8F0' }}>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-xl font-bold flex items-center space-x-2 mb-2" style={{ color: '#2C3E50' }}>
+                        <Zap className="w-5 h-5" style={{ color: '#E87461' }} />
+                        <span>24-Hour Express Service</span>
+                      </h3>
+                      <p className="text-gray-600">Add $1.00 per item for next-day return</p>
+                    </div>
+                    <button
+                      onClick={() => setIs24HourService(!is24HourService)}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                        is24HourService ? 'bg-orange-500' : 'bg-gray-200'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          is24HourService ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
                   </div>
                 </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={is24HourService}
-                    onChange={(e) => setIs24HourService(e.target.checked)}
-                    className="sr-only peer"
-                  />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
-                </label>
+
+                {/* Category Tabs */}
+                <div className="flex flex-wrap mb-8 gap-2">
+                  {tabs.map((tab) => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setSelectedTab(tab.id)}
+                      className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
+                        selectedTab === tab.id
+                          ? 'text-white bg-gradient-to-r from-orange-500 to-red-500 shadow-lg scale-105'
+                          : 'text-gray-600 bg-gray-100 hover:bg-gray-200'
+                      }`}
+                    >
+                      <span className="mr-2">{tab.icon}</span>
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Items Grid */}
+                <div className="grid md:grid-cols-2 gap-4">
+                  {clothingItems[selectedTab].map((item) => {
+                    const selectedItem = selectedItems.find(selected => selected.id === item.id);
+                    const displayPrice = is24HourService ? item.price + 1.00 : item.price;
+                    
+                    return (
+                      <div
+                        key={item.id}
+                        className="flex items-center justify-between p-4 border-2 rounded-xl pricing-item hover:shadow-lg transition-all duration-300"
+                      >
+                        <div>
+                          <h4 className="font-semibold" style={{ color: '#2C3E50' }}>{item.name}</h4>
+                          <p className="text-lg font-bold" style={{ color: '#E87461' }}>
+                            ${displayPrice.toFixed(2)}
+                            {is24HourService && (
+                              <span className="text-sm text-gray-500 ml-2">
+                                (${item.price.toFixed(2)} + $1.00)
+                              </span>
+                            )}
+                          </p>
+                        </div>
+                        
+                        <div className="flex items-center space-x-3">
+                          {selectedItem && (
+                            <>
+                              <button
+                                onClick={() => removeItem(item.id)}
+                                className="w-8 h-8 rounded-full flex items-center justify-center text-white bg-gray-400 hover:bg-gray-500 transition-colors"
+                              >
+                                <Minus className="w-4 h-4" />
+                              </button>
+                              <span className="w-8 text-center font-semibold" style={{ color: '#2C3E50' }}>
+                                {selectedItem.quantity}
+                              </span>
+                            </>
+                          )}
+                          <button
+                            onClick={() => addItem(item)}
+                            className="w-8 h-8 rounded-full flex items-center justify-center text-white bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 transition-all duration-300"
+                          >
+                            <Plus className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
 
-            {/* Clothing Tabs */}
-            <div className="flex flex-wrap gap-2 mb-8 bg-gray-100 p-1 rounded-lg">
-              <button
-                onClick={() => setActiveTab('men')}
-                className={`w-full sm:w-auto sm:flex-1 py-3 px-4 rounded-md font-medium transition-all mb-2 sm:mb-0 ${
-                  activeTab === 'men' ? 'tab-active' : 'hover:bg-gray-200'
-                }`}
-                style={{ color: activeTab === 'men' ? 'white' : '#2C3E50' }}
-              >
-                Men's Clothing
-              </button>
-              <button
-                onClick={() => setActiveTab('women')}
-                className={`w-full sm:w-auto sm:flex-1 py-3 px-4 rounded-md font-medium transition-all mb-2 sm:mb-0 ${
-                  activeTab === 'women' ? 'tab-active' : 'hover:bg-gray-200'
-                }`}
-                style={{ color: activeTab === 'women' ? 'white' : '#2C3E50' }}
-              >
-                Women's Clothing
-              </button>
-              <button
-                onClick={() => setActiveTab('household')}
-                className={`w-full sm:w-auto sm:flex-1 py-3 px-4 rounded-md font-medium transition-all mb-2 sm:mb-0 ${
-                  activeTab === 'household' ? 'tab-active' : 'hover:bg-gray-200'
-                }`}
-                style={{ color: activeTab === 'household' ? 'white' : '#2C3E50' }}
-              >
-                Household Items
-              </button>
-            </div>
-
-            {/* Items Grid */}
-            <div className="space-y-8">
-              {Object.entries(categorizedItems[activeTab]).map(([subCategoryName, itemsInSubCategory]) => (
-                itemsInSubCategory.length > 0 && (
-                  <div key={subCategoryName} className="stagger-animation">
-                    <h3 className="text-xl font-bold mb-4" style={{ color: '#2C3E50' }}>{subCategoryName}</h3>
-                    <div className="grid md:grid-cols-2 gap-4">
-                      {itemsInSubCategory.map((item, index) => {
-                        const effectivePrice = is24HourService ? item.price + 1.00 : item.price;
-                        
+            {/* Order Summary */}
+            <div className="lg:col-span-1">
+              <div className="bg-white rounded-2xl shadow-xl p-6 sticky top-8">
+                <h3 className="text-xl font-bold mb-6" style={{ color: '#2C3E50' }}>
+                  Order Summary
+                </h3>
+                
+                {selectedItems.length === 0 ? (
+                  <p className="text-gray-500 text-center py-8">
+                    Select items to see your quote
+                  </p>
+                ) : (
+                  <>
+                    <div className="space-y-3 mb-6">
+                      {selectedItems.map((item) => {
+                        const displayPrice = is24HourService ? item.price + 1.00 : item.price;
                         return (
-                          <div key={item.id} className="pricing-item border rounded-lg p-4 card-hover">
-                            <div className="flex items-center justify-between mb-3">
-                              <div>
-                                <h4 className="font-medium" style={{ color: '#2C3E50' }}>{item.name}</h4>
-                                <div className="flex items-center space-x-2">
-                                  <p className="font-semibold" style={{ color: '#E87461' }}>
-                                    ${effectivePrice.toFixed(2)}
-                                  </p>
-                                  {is24HourService && (
-                                    <span className="text-xs px-2 py-1 rounded-full bg-orange-100 text-orange-600">
-                                      +$1.00
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                              <div className="flex items-center space-x-3">
-                                <button
-                                  onClick={() => updateQuantity(activeTab, subCategoryName, index, -1)}
-                                  className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-all button-hover-effect"
-                                  disabled={item.quantity === 0}
-                                >
-                                  <Minus className="w-4 h-4" />
-                                </button>
-                                <span className="w-8 text-center font-medium">{item.quantity}</span>
-                                <button
-                                  onClick={() => updateQuantity(activeTab, subCategoryName, index, 1)}
-                                  className="w-8 h-8 rounded-full flex items-center justify-center button-hover-effect bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white transition-all duration-300 hover:scale-110"
-                                >
-                                  <Plus className="w-4 h-4" />
-                                </button>
-                              </div>
-                            </div>
-                            {item.quantity > 0 && (
-                              <div className="text-right" style={{ color: '#2C3E50' }}>
-                                Subtotal: ${(effectivePrice * item.quantity).toFixed(2)}
-                              </div>
-                            )}
+                          <div key={item.id} className="flex justify-between">
+                            <span className="text-sm">
+                              {item.quantity}x {item.name}
+                            </span>
+                            <span className="text-sm font-semibold">
+                              ${(displayPrice * item.quantity).toFixed(2)}
+                            </span>
                           </div>
                         );
                       })}
                     </div>
-                  </div>
-                )
-              ))}
-              {/* Fallback if no items in any sub-category for the active tab */}
-              {Object.values(categorizedItems[activeTab]).every(subCatItems => subCatItems.length === 0) && (
-                <div className="col-span-2 text-center py-8">
-                  <p style={{ color: '#2C3E50' }}>
-                    No {activeTab === 'men' ? "men's" : activeTab === 'women' ? "women's" : "household"} items available. 
-                    Please contact us for custom pricing.
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* Pricing Summary */}
-            <div className="border-t pt-6 mt-8">
-              <div className="rounded-lg p-6" style={{ backgroundColor: '#FFF8F0' }}>
-                <div className="space-y-3 mb-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-lg" style={{ color: '#2C3E50' }}>Subtotal:</span>
-                    <span className="text-lg font-medium" style={{ color: '#2C3E50' }}>
-                      ${pricing.baseTotal.toFixed(2)}
-                    </span>
-                  </div>
-                  
-                  {is24HourService && hasItems && (
-                    <div className="flex items-center justify-between text-sm">
-                      <span style={{ color: '#2C3E50' }}>
-                        24-Hour Service ({pricing.totalItems} items × $1.00):
-                      </span>
-                      <span style={{ color: '#E87461' }}>
-                        +${(pricing.totalItems * 1.00).toFixed(2)}
-                      </span>
-                    </div>
-                  )}
-                  
-                  {pricing.deliveryFee > 0 && (
-                    <div className="flex items-center justify-between text-sm">
-                      <span style={{ color: '#2C3E50' }}>Delivery Fee:</span>
-                      <span style={{ color: '#E87461' }}>+${pricing.deliveryFee.toFixed(2)}</span>
-                    </div>
-                  )}
-                </div>
-                
-                <div className="border-t pt-3 mb-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-2xl font-bold" style={{ color: '#2C3E50' }}>Total:</span>
-                    <span className="text-3xl font-bold" style={{ color: '#E87461' }}>
-                      ${pricing.finalTotal.toFixed(2)}
-                    </span>
-                  </div>
-                </div>
-                
-                {hasItems && (
-                  <div className="space-y-2">
-                    {pricing.qualifiesForFreeDelivery ? (
-                      <div className="flex items-center font-medium" style={{ color: '#4285F4' }}>
-                        <div className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: '#4285F4' }}></div>
-                        FREE Pickup & Delivery Included!
-                      </div>
-                    ) : (
-                      <div className="flex items-center text-sm" style={{ color: '#2C3E50' }}>
-                        <Info className="w-4 h-4 mr-2" style={{ color: '#E87461' }} />
-                        {pricing.deliveryFee > 0 ? (
-                          <span>
-                            Add ${(35 - pricing.baseTotal).toFixed(2)} more to remove delivery fee
+                    
+                    {is24HourService && (
+                      <div className="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                        <div className="flex items-center space-x-2">
+                          <Zap className="w-4 h-4 text-orange-500" />
+                          <span className="text-sm font-medium text-orange-800">
+                            24-Hour Express Service
                           </span>
-                        ) : (
-                          <span>
-                            Add ${(35 - pricing.baseTotal).toFixed(2)} more for FREE pickup & delivery
-                          </span>
-                        )}
+                        </div>
                       </div>
                     )}
                     
-                    <button 
+                    <div className="border-t pt-4 space-y-2">
+                      <div className="flex justify-between">
+                        <span>Subtotal:</span>
+                        <span className="font-semibold">${pricing.baseTotal.toFixed(2)}</span>
+                      </div>
+                      
+                      {pricing.deliveryFee > 0 && (
+                        <div className="flex justify-between">
+                          <span>Delivery Fee:</span>
+                          <span className="font-semibold">${pricing.deliveryFee.toFixed(2)}</span>
+                        </div>
+                      )}
+                      
+                      <div className="border-t pt-2">
+                        <div className="flex justify-between font-bold text-lg">
+                          <span>Total:</span>
+                          <span style={{ color: '#E87461' }}>${pricing.finalTotal.toFixed(2)}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {pricing.baseTotal >= 35 && (
+                      <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                        <div className="flex items-center space-x-2">
+                          <CheckCircle className="w-4 h-4 text-green-600" />
+                          <span className="text-sm font-medium text-green-800">
+                            FREE Pickup & Delivery!
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    <button
                       onClick={handleSchedulePickup}
-                      className="w-full py-3 px-6 rounded-lg font-medium button-hover-effect mt-4 text-white bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 transition-all duration-300 hover:scale-105 hover:shadow-lg"
+                      className="w-full mt-6 py-4 bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold rounded-xl hover:from-orange-600 hover:to-red-600 transition-all duration-300 hover:scale-105 hover:shadow-lg flex items-center justify-center space-x-2"
                     >
-                      Schedule Pickup - ${pricing.finalTotal.toFixed(2)}
+                      <Truck className="w-5 h-5" />
+                      <span>Schedule Pickup</span>
                     </button>
-                  </div>
+                  </>
                 )}
               </div>
             </div>
