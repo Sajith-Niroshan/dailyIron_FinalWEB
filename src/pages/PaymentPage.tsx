@@ -284,14 +284,10 @@ const PaymentPage: React.FC = () => {
       setClientSecret(null);
       setPaymentIntentId(null);
       
-      // Get current order ID for payment intent metadata
-      const currentOrderId = sessionStorage.getItem('currentOrderId');
-      
       const paymentPayload = {
         amount: amountInCents,
         currency: 'cad',
         metadata: {
-          orderId: currentOrderId || 'unknown',
           customerEmail: formData.email,
           customerName: formData.fullName,
           orderItemsSummary: orderDetails.items.map((item: any) => `${item.quantity}x ${item.name}`).join(', '),
@@ -361,32 +357,21 @@ const PaymentPage: React.FC = () => {
         orderDetails.items,
         orderDetails.is24HourService,
         appliedCoupon?.code,
+        finalPricing.discountAmount,
         finalPricing.finalTotal
       );
       
       if (orderResult.success) {
-        // Fetch the complete order details to get the generated order_number
-        console.log('Fetching complete order details to get order_number...');
-        const completeOrderResult = await OrderService.getOrderById(orderId);
-        
-        if (!completeOrderResult.success || !completeOrderResult.order) {
-          console.error('Failed to fetch complete order details:', completeOrderResult.error);
-          throw new Error('Failed to retrieve order number');
-        }
-        
-        const orderNumber = completeOrderResult.order.order_number;
-        console.log('🎉 Retrieved order_number from database:', orderNumber);
-        
         // Send confirmation notifications
         const smsMessage = CommunicationService.generateOrderConfirmationSMS(
           formData.fullName,
-          orderNumber, // Use the actual order_number from database
+          orderId.slice(-8), // Use last 8 characters of orderId as order number
           formData.pickupDate!
         );
         
         const emailContent = CommunicationService.generateOrderConfirmationEmail(
           formData.fullName,
-          orderNumber, // Use the actual order_number from database
+          orderId.slice(-8),
           {
             pickupDate: formData.pickupDate,
             pickupTime: formData.pickupTime,

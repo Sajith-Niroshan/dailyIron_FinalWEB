@@ -63,7 +63,7 @@ const ConfirmationPage: React.FC = () => {
   }
 
   const { submissionData } = state;
-  const { customerInfo, orderDetails, orderNumber } = submissionData;
+  const { customerInfo, orderDetails } = submissionData;
 
   const steps = [
     {
@@ -109,6 +109,14 @@ const ConfirmationPage: React.FC = () => {
       timeframe: 'After delivery'
     }
   ];
+
+  const generateOrderNumber = () => {
+    const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    return `DI${date}${random}`;
+  };
+
+  const orderNumber = generateOrderNumber();
 
   return (
     <div className="min-h-screen bg-white">
