@@ -357,21 +357,32 @@ const PaymentPage: React.FC = () => {
         orderDetails.items,
         orderDetails.is24HourService,
         appliedCoupon?.code,
-        finalPricing.discountAmount,
         finalPricing.finalTotal
       );
       
       if (orderResult.success) {
+        // Fetch the complete order details to get the generated order_number
+        console.log('Fetching complete order details to get order_number...');
+        const completeOrderResult = await OrderService.getOrderById(orderId);
+        
+        if (!completeOrderResult.success || !completeOrderResult.order) {
+          console.error('Failed to fetch complete order details:', completeOrderResult.error);
+          throw new Error('Failed to retrieve order number');
+        }
+        
+        const orderNumber = completeOrderResult.order.order_number;
+        console.log('🎉 Retrieved order_number from database:', orderNumber);
+        
         // Send confirmation notifications
         const smsMessage = CommunicationService.generateOrderConfirmationSMS(
           formData.fullName,
-          orderId.slice(-8), // Use last 8 characters of orderId as order number
+          orderNumber, // Use the actual order_number from database
           formData.pickupDate!
         );
         
         const emailContent = CommunicationService.generateOrderConfirmationEmail(
           formData.fullName,
-          orderId.slice(-8),
+          orderNumber, // Use the actual order_number from database
           {
             pickupDate: formData.pickupDate,
             pickupTime: formData.pickupTime,
