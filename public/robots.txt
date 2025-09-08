@@ -1,0 +1,49 @@
+# Robots.txt for Daily Ironing Service
+# https://dailyironing.ca
+
+User-agent: *
+Allow: /
+
+# Disallow admin and private areas
+Disallow: /admin/
+Disallow: /confirmation
+
+# Allow important pages for SEO
+Allow: /
+Allow: /surrey-ironing
+Allow: /south-surrey-ironing
+Allow: /delta-ironing
+Allow: /langley-ironing
+Allow: /white-rock-ironing
+Allow: /schedule-pickup
+Allow: /payment
+Allow: /schedule-pickup
+Allow: /blog
+Allow: /blog/*
+Allow: /privacy-policy
+Allow: /terms-and-conditions
+
+# Sitemap location
+Sitemap: https://dailyironing.ca/sitemap.xml
+
+# Crawl delay (helps prevent server overload)
+Crawl-delay: 1
+
+# Specific instructions for major search engines
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 1
+
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 1
+
+# Block common bot traffic that doesn't add value
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /
+
+User-agent: DotBot
+Disallow: /
