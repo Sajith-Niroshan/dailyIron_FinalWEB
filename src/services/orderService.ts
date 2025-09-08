@@ -233,7 +233,6 @@ export class OrderService {
     items: any[], 
     isExpress: boolean,
     couponCode?: string,
-    tipAmount?: number,
     discountAmount?: number,
     totalAmount?: number
   ): Promise<{ success: boolean; error?: string }> {
@@ -256,10 +255,6 @@ export class OrderService {
 
       if (couponCode) {
         updatePayload.coupon_code = couponCode;
-      }
-
-      if (tipAmount) {
-        updatePayload.tip_amount = tipAmount;
       }
 
       if (discountAmount) {

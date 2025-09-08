@@ -1,27 +1,25 @@
 import { useEffect } from 'react';
 
-export interface PageMetadata {
-  title?: string;
-  description?: string;
+interface PageMetadata {
+  title: string;
+  description: string;
   keywords?: string;
   ogTitle?: string;
   ogDescription?: string;
   ogImage?: string;
   ogType?: string;
-  ogUrl?: string;
   twitterCard?: string;
   twitterTitle?: string;
   twitterDescription?: string;
   twitterImage?: string;
+  canonicalUrl?: string;
   structuredData?: object;
 }
 
 export const usePageMetadata = (metadata: PageMetadata) => {
   useEffect(() => {
     // Update document title
-    if (metadata.title) {
-      document.title = metadata.title;
-    }
+    document.title = metadata.title;
 
     // Helper function to update or create meta tags
     const updateMetaTag = (name: string, content: string, property?: boolean) => {
@@ -38,56 +36,46 @@ export const usePageMetadata = (metadata: PageMetadata) => {
       }
     };
 
-    // Update standard meta tags
-    if (metadata.description) {
-      updateMetaTag('description', metadata.description);
-    }
-
+    // Update basic meta tags
+    updateMetaTag('description', metadata.description);
     if (metadata.keywords) {
       updateMetaTag('keywords', metadata.keywords);
     }
 
     // Update Open Graph tags
-    if (metadata.ogTitle) {
-      updateMetaTag('og:title', metadata.ogTitle, true);
-    }
-
-    if (metadata.ogDescription) {
-      updateMetaTag('og:description', metadata.ogDescription, true);
-    }
-
+    updateMetaTag('og:title', metadata.ogTitle || metadata.title, true);
+    updateMetaTag('og:description', metadata.ogDescription || metadata.description, true);
+    updateMetaTag('og:type', metadata.ogType || 'website', true);
+    updateMetaTag('og:url', metadata.canonicalUrl || window.location.href, true);
+    
     if (metadata.ogImage) {
       updateMetaTag('og:image', metadata.ogImage, true);
-    }
-
-    if (metadata.ogType) {
-      updateMetaTag('og:type', metadata.ogType, true);
-    }
-
-    if (metadata.ogUrl) {
-      updateMetaTag('og:url', metadata.ogUrl, true);
+      updateMetaTag('og:image:alt', metadata.ogTitle || metadata.title, true);
     }
 
     // Update Twitter Card tags
-    if (metadata.twitterCard) {
-      updateMetaTag('twitter:card', metadata.twitterCard);
-    }
-
-    if (metadata.twitterTitle) {
-      updateMetaTag('twitter:title', metadata.twitterTitle);
-    }
-
-    if (metadata.twitterDescription) {
-      updateMetaTag('twitter:description', metadata.twitterDescription);
-    }
-
+    updateMetaTag('twitter:card', metadata.twitterCard || 'summary_large_image', true);
+    updateMetaTag('twitter:title', metadata.twitterTitle || metadata.title, true);
+    updateMetaTag('twitter:description', metadata.twitterDescription || metadata.description, true);
+    
     if (metadata.twitterImage) {
-      updateMetaTag('twitter:image', metadata.twitterImage);
+      updateMetaTag('twitter:image', metadata.twitterImage, true);
+    }
+
+    // Update canonical URL
+    let canonicalLink = document.querySelector('link[rel="canonical"]') as HTMLLinkElement;
+    if (canonicalLink) {
+      canonicalLink.href = metadata.canonicalUrl || window.location.href;
+    } else {
+      canonicalLink = document.createElement('link');
+      canonicalLink.rel = 'canonical';
+      canonicalLink.href = metadata.canonicalUrl || window.location.href;
+      document.head.appendChild(canonicalLink);
     }
 
     // Add structured data
     if (metadata.structuredData) {
-      // Remove existing structured data script if it exists
+      // Remove existing structured data
       const existingScript = document.querySelector('script[type="application/ld+json"]');
       if (existingScript) {
         existingScript.remove();
@@ -100,28 +88,10 @@ export const usePageMetadata = (metadata: PageMetadata) => {
       document.head.appendChild(script);
     }
 
-    // Cleanup function to remove structured data when component unmounts
+    // Cleanup function
     return () => {
-      if (metadata.structuredData) {
-        const structuredDataScript = document.querySelector('script[type="application/ld+json"]');
-        if (structuredDataScript) {
-          structuredDataScript.remove();
-        }
-      }
+      // Note: We don't remove meta tags on cleanup as they should persist
+      // until the next page sets new ones
     };
-  }, [
-    metadata.title,
-    metadata.description,
-    metadata.keywords,
-    metadata.ogTitle,
-    metadata.ogDescription,
-    metadata.ogImage,
-    metadata.ogType,
-    metadata.ogUrl,
-    metadata.twitterCard,
-    metadata.twitterTitle,
-    metadata.twitterDescription,
-    metadata.twitterImage,
-    metadata.structuredData
-  ]);
+  }, [metadata]);
 };

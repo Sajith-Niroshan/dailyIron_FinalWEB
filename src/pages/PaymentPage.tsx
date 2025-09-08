@@ -267,22 +267,6 @@ const PaymentPage: React.FC = () => {
   const createPaymentIntent = async () => {
     console.log('*** Entering createPaymentIntent function ***');
     console.log('*** Current finalPricing:', finalPricing);
-    
-    // Get and validate order ID
-    const currentOrderId = sessionStorage.getItem('currentOrderId');
-    console.log('🔍 === ORDER ID VALIDATION ===');
-    console.log('currentOrderId from sessionStorage:', currentOrderId);
-    console.log('currentOrderId exists?', !!currentOrderId);
-    console.log('currentOrderId is not "unknown"?', currentOrderId !== 'unknown');
-    console.log('🔍 ===========================');
-    
-    if (!currentOrderId || currentOrderId === 'unknown') {
-      console.error('❌ No valid order ID found in sessionStorage');
-      setError('Order not found. Please restart the booking process.');
-      navigate('/schedule-pickup');
-      return;
-    }
-    
     try {
       setLoading(true);
       const amountInCents = Math.round(finalPricing.finalTotal * 100);
@@ -300,11 +284,14 @@ const PaymentPage: React.FC = () => {
       setClientSecret(null);
       setPaymentIntentId(null);
       
+      // Get current order ID for payment intent metadata
+      const currentOrderId = sessionStorage.getItem('currentOrderId');
+      
       const paymentPayload = {
         amount: amountInCents,
         currency: 'cad',
         metadata: {
-          order_id: currentOrderId,
+          orderId: currentOrderId || 'unknown',
           customerEmail: formData.email,
           customerName: formData.fullName,
           orderItemsSummary: orderDetails.items.map((item: any) => `${item.quantity}x ${item.name}`).join(', '),
@@ -374,8 +361,6 @@ const PaymentPage: React.FC = () => {
         orderDetails.items,
         orderDetails.is24HourService,
         appliedCoupon?.code,
-        finalPricing.tipAmount,
-        finalPricing.discountAmount,
         finalPricing.finalTotal
       );
       
@@ -443,8 +428,7 @@ const PaymentPage: React.FC = () => {
                 pricing: finalPricing
               },
               submittedAt: new Date().toISOString(),
-              paymentIntentId,
-              orderNumber: orderNumber // Include the actual order number from database
+              paymentIntentId
             }
           }
         });
