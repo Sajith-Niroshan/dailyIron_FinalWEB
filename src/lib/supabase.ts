@@ -305,8 +305,9 @@ export const getStatusDisplayName = (status: Order['status']) => {
 
 export const getTimeSlotDisplayName = (timeSlot: string) => {
   const timeSlotMap = {
-    afternoon: 'Afternoon (4:00 PM - 6:00 PM)',
-    evening: 'Evening (6:00 PM - 8:00 PM)'
+    morning: 'Morning (8:00 AM - 12:00 PM)',
+    afternoon: 'Afternoon (12:00 PM - 5:00 PM)',
+    evening: 'Evening (5:00 PM - 7:00 PM)'
   };
   return timeSlotMap[timeSlot as keyof typeof timeSlotMap] || timeSlot;
 };
